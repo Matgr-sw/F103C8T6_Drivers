@@ -4,18 +4,10 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           16-11-2026
- * Last Update:     1:43 PM, Tuesday, November 17, 2026
+ * Last Update:     03:29 PM, Wednesday, November 18, 2026
  ****************************************************************************************************/
 #ifndef RCC_INTERFACE_H
 #define RCC_INTERFACE_H
-
-/*The configuration of each PLL (selection of clock source, predivision factor and
-multiplication factor) must be done before enabling the PLL*/
-
-/*When changing the entry clock source of the main PLL, the original clock source must be
-switched off only after the selection of the new clock source (done through bit PLLSRC in
-the Clock configuration register (RCC_CFGR)).*/
-
 
 
 								/***********************  Enums  ***********************/

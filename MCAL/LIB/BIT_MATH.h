@@ -4,7 +4,7 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           16-11-2026
- * Last Update:     01:57 PM, Monday, November 16, 2026
+ * Last Update:     11:05 AM, Thursday, November 19, 2026
  ****************************************************************************************************/
 #ifndef RCC_BIT_MATH_H
 #define RCC_BIT_MATH_H
