@@ -15,6 +15,8 @@
 #include "RCC_prv.h"
 #include "RCC_interface.h"
 
+#include "PWR_interface.h"
+
 
 
 
@@ -243,13 +245,16 @@ RCC_ErrorState_t RCC_eSetClckState(RCC_SysClk_t Copy_eClk, RCC_ClkState_t Copy_e
 					{
 
 						SET_BIT((RCC->APB1ENR), APB1ENR_PWR_EN);
-					    /*@todo: implement PWR for: SET_BIT(PWR->CR, 8);*/
+						PWR_eBDCRsetAccess(PWR_BDCR_Access_Enabled);
 
 						SET_BIT((RCC->BDCR), BDCR_LSE_ON);
 						while (!(GET_BIT((RCC->BDCR), BDCR_LSE_RDY)) && (Local_u16TimeOutCounter < RCC_RDY_FLAGS_TIMEOUT))
 						{
 							Local_u16TimeOutCounter++;
 						}
+
+						PWR_eBDCRsetAccess(PWR_BDCR_Access_Disabled);
+
 
 						break;
 					}
@@ -268,9 +273,12 @@ RCC_ErrorState_t RCC_eSetClckState(RCC_SysClk_t Copy_eClk, RCC_ClkState_t Copy_e
 					case RCC_RTC:
 					{
 						SET_BIT((RCC->APB1ENR), APB1ENR_PWR_EN);
-						/*@todo: implement PWR for: SET_BIT(PWR->CR, 8);*/
+						PWR_eBDCRsetAccess(PWR_BDCR_Access_Enabled);
 						SET_BIT((RCC->BDCR), BDCR_RTC_EN);
+						PWR_eBDCRsetAccess(PWR_BDCR_Access_Disabled);
+
 						break;
+
 					}
 
 					default: Local_eErrorState = RCC_Invalid_ClkType;break;

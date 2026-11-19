@@ -3,6 +3,7 @@
  *
  *  Created on: Nov, 2026
  *      Author: SaadanyOmar
+ *      Last Update:     01:41 PM, Thursday, November 19, 2026
  */
 
 #ifndef		MCAL_baseAddress_H
@@ -62,7 +63,17 @@ typedef struct
 
 }  RCC_Register_t;
 
+
+typedef struct
+{
+	volatile uint32_t 	CR;
+	volatile uint32_t 	CSR;
+
+}PWR_Registers_t;
+
+
 #define RCC 	((volatile RCC_Register_t*)(RCC_BASE_ADDRESS))
+#define PWR		((volatile PWR_Registers_t*) (PWR_BASE_ADDRESS))
 
 
 #endif
