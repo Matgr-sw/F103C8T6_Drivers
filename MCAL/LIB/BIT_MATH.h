@@ -15,6 +15,11 @@
 #define		TOG_BIT(REG, BIT)	((REG) ^= (1U << BIT))
 #define 	GET_BIT(REG, BIT)	((1U) & (REG >> BIT))
 
+#define 	GET_BITS(REG, BIT, MASK)		((MASK) &  ((REG) >> (BIT)))
+#define 	SET_BITS(REG, BIT, MASK)		((REG) |=  ((MASK) << (BIT)))
+#define 	CLR_BITS(REG, BIT, MASK)		((REG) &= ~((MASK) << (BIT)))
+#define 	TOG_BITS(REG, BIT, MASK)		((REG) ^=  ((MASK) << (BIT))
+
 
 
 

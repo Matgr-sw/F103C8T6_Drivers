@@ -1,0 +1,463 @@
+/***************************************************************************************************
+ * @file:           RCC_prog.c
+ * @brief:			This file contains the implementation of the RCC driver functions
+ * @author:         Ibrahim Saber
+ * @version:        1.0
+ * @date:           17-11-2026
+ * Last Update:     1:43 PM, Tuesday, November 17, 2026
+ ****************************************************************************************************/
+#include <stdint.h>
+#include <stddef.h>
+
+#include "BIT_MATH.h"
+#include "MCAL_baseAddress.h"
+
+#include "RCC_prv.h"
+#include "RCC_interface.h"
+
+
+
+
+
+
+
+/**
+ * 	Description:                This Function is used to initialize the RCC peripheral at one pass
+ * 	Parameters:                 RCC_Configs_t * Copy_pConfigs
+ * 	Returns:                    - RCC_ErrorState_t Local_eErrorState The return state of the function
+ * 	Preconditions:              - None
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The RCC driver is initialized
+ * 	Sync/Async:               	Sync.
+ */
+RCC_ErrorState_t RCC_eInit(RCC_Configs_t * Copy_pConfigs)
+{
+	RCC_ErrorState_t Local_eErrorState = RCC_Exit_OK;
+
+	if(Copy_pConfigs != NULL)
+	{
+
+		/*Config PLL*/
+
+		/*must be off before PLL is configed*/
+		RCC_eSetClckState(RCC_PLL, RCC_Clk_OFF);
+		/*XTPRE config*/
+		if((Copy_pConfigs->PllXTPRE))
+		{
+			SET_BIT((RCC->CFGR), CFGR_PLL_XTPRE);
+		}
+		else
+		{
+			CLR_BIT((RCC->CFGR), CFGR_PLL_XTPRE);
+		}
+		/*PLL Clk Src config*/
+		if((Copy_pConfigs->PllClkSrc))
+		{
+			SET_BIT((RCC->CFGR), CFGR_PLL_SRC);
+		}
+		else
+		{
+			CLR_BIT((RCC->CFGR), CFGR_PLL_SRC);
+		}
+		/*PLL multiplier*/
+		CLR_BITS((RCC->CFGR), CFGR_PLLMUL0, CFGR_PLLMUL_MASK);
+		SET_BITS((RCC->CFGR), CFGR_PLLMUL0, (Copy_pConfigs->PllMul));
+
+
+
+		/*config the prescalers*/
+
+		/*AHB Presc*/
+		CLR_BITS((RCC->CFGR), CFGR_HPRE0, CFGR_HPRE_MASK);
+		SET_BITS((RCC->CFGR), CFGR_HPRE0, (Copy_pConfigs->AHBpresc));
+		/*APB1 Presc*/
+		CLR_BITS((RCC->CFGR), CFGR_PPRE10, CFGR_PPRE1_MASK);
+		SET_BITS((RCC->CFGR), CFGR_PPRE10, (Copy_pConfigs->APB1presc));
+		/*APB2 Presc*/
+		CLR_BITS((RCC->CFGR), CFGR_PPRE20, CFGR_PPRE2_MASK);
+		SET_BITS((RCC->CFGR), CFGR_PPRE20, (Copy_pConfigs-> APB2presc));
+		/*ADC Presc*/
+		CLR_BITS((RCC->CFGR), CFGR_ADC_PRE0, CFGR_ADC_PRE_MASK);
+		SET_BITS((RCC->CFGR), CFGR_ADC_PRE0, (Copy_pConfigs-> ADCpresc));
+		/*USB Presc*/
+		CLR_BIT((RCC->CFGR), CFGR_OTGSPRE);
+		SET_BITS((RCC->CFGR), CFGR_OTGSPRE, (Copy_pConfigs-> USBpresc));
+		/*RTC Clk src*/
+		CLR_BITS((RCC->BDCR), BDCR_RTCSEL0, BDCR_RTCSEL_MASK);
+		SET_BITS((RCC->BDCR), BDCR_RTCSEL0, (Copy_pConfigs->RTCclkSrc));
+
+		/*RCC CCS config*/
+		CLR_BIT((RCC->CR), CR_CSSON);
+		SET_BITS((RCC->CR), CR_CSSON, (Copy_pConfigs->ClkSecurity));
+
+		/*MCO select*/
+		CLR_BITS((RCC->CFGR), CFGR_MCO0, CFGR_MCO_MASK);
+		SET_BITS((RCC->CFGR), CFGR_MCO0, (Copy_pConfigs->MCOselect));
+
+
+		/*Setting up clk states*/
+		RCC_eSetClckState(RCC_HSI, (Copy_pConfigs->HSIstate));
+		RCC_eSetClckState(RCC_HSE, (Copy_pConfigs->HSEstate));
+		RCC_eSetClckState(RCC_PLL, (Copy_pConfigs->PLLstate));
+		RCC_eSetClckState(RCC_LSI, (Copy_pConfigs->LSIstate));
+		RCC_eSetClckState(RCC_LSE, (Copy_pConfigs->LSEstate));
+		RCC_eSetClckState(RCC_RTC, (Copy_pConfigs->RTCstate));
+
+		/*Setting up sys clk*/
+		RCC_eSetSysClck((Copy_pConfigs->SysClkSrc));
+
+	}
+
+	else
+	{
+		Local_eErrorState = RCC_NULL_Ptr_Err;
+	}
+
+
+	return Local_eErrorState;
+
+}
+
+
+
+
+/**
+ * 	Description:                This Function is used to set the switched state of each clk type
+ * 	Parameters:                 - RCC_SysClk_t Copy_eClk
+ * 								- RCC_ClkState_t Copy_eClkState
+ * 	Returns:                    - RCC_ErrorState_t Local_eErrorState The return state of the function
+ * 	Preconditions:              - None
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The clk state is setted and ensured by waiting on its flag
+ * 	Sync/Async:               	Sync.
+ */
+RCC_ErrorState_t RCC_eSetClckState(RCC_SysClk_t Copy_eClk, RCC_ClkState_t Copy_eClkState)
+{
+
+	RCC_ErrorState_t Local_eErrorState = RCC_Exit_OK;
+	uint16_t Local_u16TimeOutCounter = 0;
+
+		switch(Copy_eClkState)
+		{
+			case RCC_Clk_OFF:
+			{
+				if(((GET_BITS((RCC->CFGR), CFGR_SW0, CFGR_SW_MASK)) != Copy_eClk) && ((GET_BITS((RCC->CFGR), CFGR_SWS0, CFGR_SWS_MASK)) != Copy_eClk))
+				{
+					switch(Copy_eClk)
+					{
+						/*making sure you don't shut a selected or running clk*/
+						case RCC_HSI:
+						{
+							CLR_BIT((RCC->CR), CR_HSION);
+							break;
+						}
+
+						case RCC_HSE:
+						{
+							CLR_BIT((RCC->CR), CR_HSEON);
+							break;
+						}
+
+						case RCC_PLL:
+						{
+							/*USB must be cleared before PLLON is disabled*/
+							CLR_BIT((RCC->AHBENR), AHBENR_OTGFS_EN);
+							CLR_BIT((RCC->CR), CR_PLLON);
+							break;
+						}
+
+						case RCC_LSE:
+						{
+							CLR_BIT((RCC->BDCR), BDCR_LSE_ON);
+							break;
+
+						}
+
+						case RCC_LSI:
+						{
+							CLR_BIT((RCC->CSR), CSR_LSI_ON);
+							break;
+						}
+
+						case RCC_RTC:
+						{
+							CLR_BIT((RCC->BDCR), BDCR_RTC_EN);
+							break;
+						}
+
+						default: Local_eErrorState = RCC_Invalid_ClkType; break;
+
+						}
+
+			}
+
+
+			else
+			{
+				Local_eErrorState = RCC_Shut_SelectedClk;
+			}
+
+				break;
+
+		}
+
+
+			case RCC_Clk_ON:
+			{
+				switch(Copy_eClk)
+				{
+					case RCC_HSI:
+					{
+						SET_BIT((RCC->CR), CR_HSION);
+						while (!(GET_BIT((RCC->CR), CR_HSIRDY)) && (Local_u16TimeOutCounter < RCC_RDY_FLAGS_TIMEOUT))
+						{
+							Local_u16TimeOutCounter++;
+						}
+
+						break;
+					}
+
+					case RCC_HSE:
+					{
+						SET_BIT((RCC->CR), CR_HSEON);
+						while (!(GET_BIT((RCC->CR), CR_HSERDY)) && (Local_u16TimeOutCounter < RCC_RDY_FLAGS_TIMEOUT))
+						{
+							Local_u16TimeOutCounter++;
+						}
+
+						break;
+					}
+
+					case RCC_PLL:
+					{
+						SET_BIT((RCC->CR), CR_PLLON);
+						while (!(GET_BIT((RCC->CR), CR_PLLRDY)) && (Local_u16TimeOutCounter < RCC_RDY_FLAGS_TIMEOUT))
+						{
+							Local_u16TimeOutCounter++;
+						}
+
+						break;
+					}
+
+					case RCC_LSE:
+					{
+
+						SET_BIT((RCC->APB1ENR), APB1ENR_PWR_EN);
+					    /*@todo: implement PWR for: SET_BIT(PWR->CR, 8);*/
+
+						SET_BIT((RCC->BDCR), BDCR_LSE_ON);
+						while (!(GET_BIT((RCC->BDCR), BDCR_LSE_RDY)) && (Local_u16TimeOutCounter < RCC_RDY_FLAGS_TIMEOUT))
+						{
+							Local_u16TimeOutCounter++;
+						}
+
+						break;
+					}
+
+					case RCC_LSI:
+					{
+						SET_BIT((RCC->CSR), CSR_LSI_ON);
+						while (!(GET_BIT((RCC->CSR), CSR_LSI_RDY)) && (Local_u16TimeOutCounter < RCC_RDY_FLAGS_TIMEOUT))
+						{
+							Local_u16TimeOutCounter++;
+						}
+
+						break;
+					}
+
+					case RCC_RTC:
+					{
+						SET_BIT((RCC->APB1ENR), APB1ENR_PWR_EN);
+						/*@todo: implement PWR for: SET_BIT(PWR->CR, 8);*/
+						SET_BIT((RCC->BDCR), BDCR_RTC_EN);
+						break;
+					}
+
+					default: Local_eErrorState = RCC_Invalid_ClkType;break;
+
+				}
+
+
+				break;
+
+			}
+
+			default: Local_eErrorState = RCC_Invalid_ClkState; break;
+
+		}
+
+
+
+	if(Local_u16TimeOutCounter > RCC_RDY_FLAGS_TIMEOUT)
+	{
+		Local_eErrorState = RCC_Timeout;
+	}
+
+
+	return Local_eErrorState;
+}
+
+
+
+/**
+ * 	Description:                This Function is used to select which clk type is the sysclk
+ * 	Parameters:                 RCC_SysClk_t Copy_eSysClk
+ * 	Returns:                    - RCC_ErrorState_t Local_eErrorState The return state of the function
+ * 	Preconditions:              - The selected clk must be on and stable
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The selected clk is switched to as sysclk
+ * 	Sync/Async:               	Sync.
+ */
+RCC_ErrorState_t RCC_eSetSysClck(RCC_SysClk_t Copy_eSysClk)
+{
+	RCC_ErrorState_t Local_eErrorState = RCC_Exit_OK;
+
+
+	if((Copy_eSysClk >=  RCC_HSI) && (Copy_eSysClk <= RCC_PLL))
+	{
+		CLR_BITS((RCC -> CFGR), CFGR_SW0, CFGR_SW_MASK);
+		SET_BITS((RCC -> CFGR), CFGR_SW0, (Copy_eSysClk));
+	}
+
+	else
+	{
+		Local_eErrorState = RCC_Invalid_ClkType;
+	}
+
+	return Local_eErrorState;
+}
+
+
+
+/**
+ * 	Description:                This Function is used to read the existing sysclk
+ * 	Parameters:                 RCC_SysClk_t* Copy_eSysClk
+ * 	Returns:                    - RCC_ErrorState_t Local_eErrorState The return state of the function
+ * 	Preconditions:              - None
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The current sysclk is stored in the param
+ * 	Sync/Async:               	Sync.
+ */
+RCC_ErrorState_t RCC_eGetSysClck(RCC_SysClk_t* Copy_eSysClk)
+{
+	RCC_ErrorState_t Local_eErrorState = RCC_Exit_OK;
+
+	if(Copy_eSysClk != NULL)
+	{
+		*Copy_eSysClk = (RCC_SysClk_t) (GET_BITS((RCC -> CFGR), CFGR_SWS0, CFGR_SWS_MASK));
+	}
+
+	else
+	{
+		Local_eErrorState = RCC_NULL_Ptr_Err;
+	}
+
+	return Local_eErrorState;
+}
+
+
+/**
+ * 	Description:                This Function is used to enable the clk of an AHB periph
+ * 	Parameters:                 RCC_AHBperiphs_t Copy_eAHBperiph
+ * 	Returns:                    - void
+ * 	Preconditions:              - None
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The selected perihp clk is enabled
+ * 	Sync/Async:               	Sync.
+ */
+void RCC_eAHBperiphEnable(RCC_AHBperiphs_t Copy_eAHBperiph)
+{
+	SET_BIT((RCC->AHBENR), Copy_eAHBperiph);
+}
+
+
+
+
+
+/**
+ * 	Description:                This Function is used to disable the clk of an AHB periph
+ * 	Parameters:                 RCC_AHBperiphs_t Copy_eAHBperiph
+ * 	Returns:                    - void
+ * 	Preconditions:              - None
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The selected perihp clk is disabled
+ * 	Sync/Async:               	Sync.
+ */
+void RCC_eAHBperiphDisable(RCC_AHBperiphs_t Copy_eAHBperiph)
+{
+	CLR_BIT((RCC->AHBENR), Copy_eAHBperiph);
+}
+
+
+/**
+ * 	Description:                This Function is used to enable the clk of an APB1 periph
+ * 	Parameters:                 RCC_APB1periphs_t Copy_eAPB1periph
+ * 	Returns:                    - void
+ * 	Preconditions:              - None
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The selected perihp clk is enabled
+ * 	Sync/Async:               	Sync.
+ */
+void RCC_eAPB1periphEnable(RCC_APB1periphs_t Copy_eAPB1periph)
+{
+	SET_BIT((RCC->APB1ENR), Copy_eAPB1periph);
+
+}
+
+
+
+
+/**
+ * 	Description:                This Function is used to disable the clk of an APB1 periph
+ * 	Parameters:                 RCC_APB1periphs_t Copy_eAHBperiph
+ * 	Returns:                    - void
+ * 	Preconditions:              - None
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The selected perihp clk is disabled
+ * 	Sync/Async:               	Sync.
+ */
+void RCC_eAPB1periphDisable(RCC_APB1periphs_t Copy_eAPB1periph)
+{
+	CLR_BIT((RCC->APB1ENR), Copy_eAPB1periph);
+}
+
+
+
+
+
+
+
+/**
+ * 	Description:                This Function is used to enable the clk of an APB2 periph
+ * 	Parameters:                 RCC_APB2periphs_t Copy_eAPB2periph
+ * 	Returns:                    - void
+ * 	Preconditions:              - None
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The selected perihp clk is enabled
+ * 	Sync/Async:               	Sync.
+ */
+void RCC_eAPB2periphEnable(RCC_APB2periphs_t Copy_eAPB2periph)
+{
+	SET_BIT((RCC->APB2ENR), Copy_eAPB2periph);
+}
+
+
+
+
+/**
+ * 	Description:                This Function is used to disable the clk of an APB2 periph
+ * 	Parameters:                 RCC_APB2periphs_t Copy_eAPB2periph
+ * 	Returns:                    - void
+ * 	Preconditions:              - None
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            The selected periph clk is disabled
+ * 	Sync/Async:               	Sync.
+ */
+void RCC_eAPB2periphDisable(RCC_APB2periphs_t Copy_eAPB2periph)
+{
+	CLR_BIT((RCC->APB2ENR), Copy_eAPB2periph);
+}
+
+
+
+

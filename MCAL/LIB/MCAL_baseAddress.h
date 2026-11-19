@@ -49,16 +49,17 @@
 
 typedef struct
 {
-	u32 CR		   ;
-	u32 CFGR	   ;
-	u32 CIR		   ;
-	u32 APB2RSTR ;
-	u32 APB1RSTR ;
-	u32 AHBENR	 ;
-	u32 APB2ENR	 ;
-	u32 APB1ENR	 ;
-	u32 BDCR	   ;
-	u32 CSR		   ;
+	volatile uint32_t   CR;
+	volatile uint32_t   CFGR;
+	volatile uint32_t   CIR;
+	volatile uint32_t   APB2RSTR;
+	volatile uint32_t   APB1RSTR;
+	volatile uint32_t   AHBENR;
+	volatile uint32_t   APB2ENR;
+	volatile uint32_t   APB1ENR;
+	volatile uint32_t   BDCR;
+	volatile uint32_t   CSR;
+
 }  RCC_Register_t;
 
 #define RCC 	((volatile RCC_Register_t*)(RCC_BASE_ADDRESS))

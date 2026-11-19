@@ -4,10 +4,13 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           16-11-2026
- * Last Update:     05:28 PM, Monday, November 16, 2026
+ * Last Update:     1:39 PM, Tuesday, November 17, 2026
  ****************************************************************************************************/
 #ifndef		RCC_PRV_H
 #define 	RCC_PRV_H
+								/*********************** prv MACROS  ***********************/
+#define RCC_RDY_FLAGS_TIMEOUT		1000u
+
 
 								/*********************** MASKS  ***********************/
 #define CR_HSITRIM_MASK		0b11111
