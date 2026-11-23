@@ -72,7 +72,30 @@ typedef struct
 }PWR_Registers_t;
 
 
+typedef struct
+{
+	volatile uint32_t 	CR[2];
+	volatile uint32_t 	IDR;
+    volatile uint32_t	ODR;
+    volatile uint32_t	BSRR;
+    volatile uint32_t	BRR;
+    volatile uint32_t	LCKR;
+
+}GPIO_Registers_t;
+
+
+
+
+
 #define RCC 	((volatile RCC_Register_t*)(RCC_BASE_ADDRESS))
+
+#define GPIOA	((volatile GPIO_Registers_t*) (GPIOA_BASE_ADDRESS))
+#define GPIOB	((volatile GPIO_Registers_t*) (GPIOB_BASE_ADDRESS))
+#define GPIOC	((volatile GPIO_Registers_t*) (GPIOC_BASE_ADDRESS))
+#define GPIOD	((volatile GPIO_Registers_t*) (GPIOD_BASE_ADDRESS))
+
+
+
 #define PWR		((volatile PWR_Registers_t*) (PWR_BASE_ADDRESS))
 
 
