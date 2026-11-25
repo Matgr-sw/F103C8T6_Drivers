@@ -4,12 +4,24 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           16-11-2026
- * Last Update:     1:39 PM, Tuesday, November 17, 2026
+ * Last Update:     4:40 PM, Wednesday, November 25, 2026
  ****************************************************************************************************/
 #ifndef		RCC_PRV_H
 #define 	RCC_PRV_H
 								/*********************** prv MACROS  ***********************/
 #define RCC_RDY_FLAGS_TIMEOUT		1000u
+#define RCC_HSI_FREQ_HZ				8000000u
+#define RCC_SYSCLK_MAX_HZ			72000000u
+#define RCC_FLASH_0WS_MAX_HZ		24000000u
+#define RCC_FLASH_1WS_MAX_HZ		48000000u
+#define RCC_PLL_HSI_DIV				2u
+#define RCC_PLL_XTPRE_DIV			2u
+#define RCC_PLLMUL_OFFSET			2u
+#define RCC_PLLMUL_MAX				16u
+
+#define FLASH_LATENCY_0WS			0u
+#define FLASH_LATENCY_1WS			1u
+#define FLASH_LATENCY_2WS			2u
 
 
 								/*********************** MASKS  ***********************/
@@ -27,6 +39,9 @@
 
 
 #define BDCR_RTCSEL_MASK	0b11
+
+
+#define ACR_LATENCY_MASK	0b111
 								/*********************** Bits  ***********************/
 #define CR_HSION		0u
 #define CR_HSIRDY		1u
@@ -197,6 +212,10 @@
 #define CFGR2_PREDIV1SRC	16u
 #define CFGR2_I2S2SRC		17u
 #define CFGR2_I2S3SRC		18u
+
+
+
+#define ACR_LATENCY0		0u
 
 
 

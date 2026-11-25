@@ -4,7 +4,7 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           17-11-2026
- * Last Update:     11:21 AM, Thursday, November 19, 2026
+ * Last Update:     4:40 PM, Wednesday, November 25, 2026
  ****************************************************************************************************/
 #include <stdint.h>
 #include <stddef.h>
@@ -13,6 +13,7 @@
 #include "MCAL_baseAddress.h"
 
 #include "RCC_prv.h"
+#include "RCC_cfg.h"
 #include "RCC_interface.h"
 
 #include "PWR_interface.h"
@@ -308,23 +309,148 @@ RCC_ErrorState_t RCC_eSetClckState(RCC_SysClk_t Copy_eClk, RCC_ClkState_t Copy_e
 
 
 /**
+ * 	Description:                This Function is used to calc the sysclk freq of the selected clk src
+ * 	Parameters:                 - RCC_SysClk_t Copy_eSysClk
+ * 	Returns:                    - uint32_t Local_u32Freq The sysclk freq in Hz
+ * 	Preconditions:              - PLL cfg is already written in CFGR
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            None
+ * 	Sync/Async:               	Sync.
+ */
+static uint32_t RCC_u32GetSysClkFreq(RCC_SysClk_t Copy_eSysClk)
+{
+	uint32_t Local_u32Freq = RCC_HSI_FREQ_HZ;
+	uint32_t Local_u32PllMul;
+
+	if(Copy_eSysClk == RCC_HSE)
+	{
+		Local_u32Freq = RCC_HSE_FREQ_HZ;
+	}
+
+	else if(Copy_eSysClk == RCC_PLL)
+	{
+		/*PLL input*/
+		if(GET_BIT((RCC->CFGR), CFGR_PLL_SRC) == RCC_HSE_PllXTPRE)
+		{
+			Local_u32Freq = RCC_HSE_FREQ_HZ;
+			if(GET_BIT((RCC->CFGR), CFGR_PLL_XTPRE) == RCC_PlLXTPRE_HSE_DIV_2)
+			{
+				Local_u32Freq /= RCC_PLL_XTPRE_DIV;
+			}
+		}
+
+		else
+		{
+			Local_u32Freq = (RCC_HSI_FREQ_HZ / RCC_PLL_HSI_DIV);
+		}
+
+		/*PLL multiplier = field + 2, field 1111 is x16 clampped by HW from x17*/
+		Local_u32PllMul = (GET_BITS((RCC->CFGR), CFGR_PLLMUL0, CFGR_PLLMUL_MASK) + RCC_PLLMUL_OFFSET);
+		if(Local_u32PllMul > RCC_PLLMUL_MAX)
+		{
+			Local_u32PllMul = RCC_PLLMUL_MAX;
+		}
+		Local_u32Freq *= Local_u32PllMul;
+	}
+
+	return Local_u32Freq;
+}
+
+
+
+/**
+ * 	Description:                This Function is used to get the flash latency needed for a sysclk freq
+ * 	Parameters:                 - uint32_t Copy_u32Freq
+ * 	Returns:                    - uint32_t Local_u32Latency The flash latency
+ * 	Preconditions:              - Copy_u32Freq is not above RCC_SYSCLK_MAX_HZ
+ * 	Side effects:               No side effects
+ * 	Post Conditions:            None
+ * 	Sync/Async:               	Sync.
+ */
+static uint32_t RCC_u32GetFlashLatency(uint32_t Copy_u32Freq)
+{
+	uint32_t Local_u32Latency = FLASH_LATENCY_0WS;
+
+	if(Copy_u32Freq > RCC_FLASH_1WS_MAX_HZ)
+	{
+		Local_u32Latency = FLASH_LATENCY_2WS;
+	}
+
+	else if(Copy_u32Freq > RCC_FLASH_0WS_MAX_HZ)
+	{
+		Local_u32Latency = FLASH_LATENCY_1WS;
+	}
+
+	return Local_u32Latency;
+}
+
+
+
+/**
  * 	Description:                This Function is used to select which clk type is the sysclk
  * 	Parameters:                 RCC_SysClk_t Copy_eSysClk
  * 	Returns:                    - RCC_ErrorState_t Local_eErrorState The return state of the function
+ * 								  (RCC_Invalid_Config if the sysclk is above 72 MHz, RCC_Timeout if SWS is not set)
  * 	Preconditions:              - The selected clk must be on and stable
- * 	Side effects:               No side effects
- * 	Post Conditions:            The selected clk is switched to as sysclk
+ * 	Side effects:               Flash latency is changed to match the sysclk
+ * 	Post Conditions:            The sysclk is switched, ensured by waiting on SWS, and the flash latency matches it
  * 	Sync/Async:               	Sync.
  */
 RCC_ErrorState_t RCC_eSetSysClck(RCC_SysClk_t Copy_eSysClk)
 {
 	RCC_ErrorState_t Local_eErrorState = RCC_Exit_OK;
+	uint32_t Local_u32Freq;
+	uint32_t Local_u32NewLatency;
+	uint32_t Local_u32OldLatency;
+	uint16_t Local_u16TimeOutCounter = 0;
 
 
 	if((Copy_eSysClk >=  RCC_HSI) && (Copy_eSysClk <= RCC_PLL))
 	{
-		CLR_BITS((RCC -> CFGR), CFGR_SW0, CFGR_SW_MASK);
-		SET_BITS((RCC -> CFGR), CFGR_SW0, (Copy_eSysClk));
+		Local_u32Freq = RCC_u32GetSysClkFreq(Copy_eSysClk);
+
+		/*max sysclk 72 MHz*/
+		if(Local_u32Freq <= RCC_SYSCLK_MAX_HZ)
+		{
+			Local_u32NewLatency = RCC_u32GetFlashLatency(Local_u32Freq);
+			Local_u32OldLatency = GET_BITS((FLASH->ACR), ACR_LATENCY0, ACR_LATENCY_MASK);
+
+			/*must be raised before switching to a faster clk*/
+			if(Local_u32NewLatency > Local_u32OldLatency)
+			{
+				CLR_BITS((FLASH->ACR), ACR_LATENCY0, ACR_LATENCY_MASK);
+				SET_BITS((FLASH->ACR), ACR_LATENCY0, Local_u32NewLatency);
+			}
+
+			/*Setting up sys clk*/
+			CLR_BITS((RCC -> CFGR), CFGR_SW0, CFGR_SW_MASK);
+			SET_BITS((RCC -> CFGR), CFGR_SW0, (Copy_eSysClk));
+
+			/*waiting on SWS*/
+			while((GET_BITS((RCC -> CFGR), CFGR_SWS0, CFGR_SWS_MASK) != (uint32_t)Copy_eSysClk) &&
+				  (Local_u16TimeOutCounter < RCC_RDY_FLAGS_TIMEOUT))
+			{
+				Local_u16TimeOutCounter++;
+			}
+
+			if(Local_u16TimeOutCounter >= RCC_RDY_FLAGS_TIMEOUT)
+			{
+				/*switch not done, higher latency kept*/
+				Local_eErrorState = RCC_Timeout;
+			}
+
+			/*must be lowered only after the switch is done*/
+			else if(Local_u32NewLatency < Local_u32OldLatency)
+			{
+				CLR_BITS((FLASH->ACR), ACR_LATENCY0, ACR_LATENCY_MASK);
+				SET_BITS((FLASH->ACR), ACR_LATENCY0, Local_u32NewLatency);
+			}
+		}
+
+		else
+		{
+			Local_eErrorState = RCC_Invalid_Config;
+		}
 	}
 
 	else

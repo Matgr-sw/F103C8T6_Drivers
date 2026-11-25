@@ -4,7 +4,7 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           16-11-2026
- * Last Update:     03:29 PM, Wednesday, November 18, 2026
+ * Last Update:     4:40 PM, Wednesday, November 25, 2026
  ****************************************************************************************************/
 #ifndef RCC_INTERFACE_H
 #define RCC_INTERFACE_H
@@ -281,9 +281,10 @@ RCC_ErrorState_t RCC_eSetClckState(RCC_SysClk_t Copy_eClk, RCC_ClkState_t Copy_e
  * 	Description:                This Function is used to select which clk type is the sysclk
  * 	Parameters:                 RCC_SysClk_t Copy_eSysClk
  * 	Returns:                    - RCC_ErrorState_t Local_eErrorState The return state of the function
+ * 								  (RCC_Invalid_Config if the sysclk is above 72 MHz, RCC_Timeout if SWS is not set)
  * 	Preconditions:              - The selected clk must be on and stable
- * 	Side effects:               No side effects
- * 	Post Conditions:            The selected clk is switched to as sysclk
+ * 	Side effects:               Flash latency is changed to match the sysclk
+ * 	Post Conditions:            The sysclk is switched, ensured by waiting on SWS, and the flash latency matches it
  * 	Sync/Async:               	Sync.
  */
 RCC_ErrorState_t RCC_eSetSysClck(RCC_SysClk_t Copy_eSysClk);
