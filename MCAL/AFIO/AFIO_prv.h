@@ -11,10 +11,10 @@
 
 
 								/*********************** prv MACROS  ***********************/
-#define 	AFIO_DEFAULT		       0u
-#define		AFIO_REMAPPED		       1u
-#define     AFIO_PARTIAL_REMAP	       2u
-#define     AFIO_FULL_REMAP   	       3u
+#define 	AFIO_DEFAULT		       1u
+#define		AFIO_REMAPPED		       2u
+#define     AFIO_PARTIAL_REMAP	       3u
+#define     AFIO_FULL_REMAP   	       4u
 
 #define 	AFIO_EXTI_REGS_SHIFTING	   4u
 

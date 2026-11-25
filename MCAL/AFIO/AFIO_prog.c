@@ -296,7 +296,7 @@ AFIO_ErrorStates_t AFIO_eConfigEventOutput(AFIO_Port_t Copy_ePort, AFIO_Pin_t Co
 					SET_BITS((AFIO->EVCR), EVCR_PIN0, Copy_ePin);
 
 					CLR_BITS((AFIO->EVCR), EVCR_PORT0, AFIO_4BIT_MASK);
-					SET_BITS((AFIO->EVCR), EVCR_PIN0, Copy_ePort);
+					SET_BITS((AFIO->EVCR), EVCR_PORT0, Copy_ePort);
 
 					SET_BIT((AFIO->EVCR), EVCR_EVOE);
 

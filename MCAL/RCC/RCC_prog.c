@@ -296,7 +296,7 @@ RCC_ErrorState_t RCC_eSetClckState(RCC_SysClk_t Copy_eClk, RCC_ClkState_t Copy_e
 
 
 
-	if(Local_u16TimeOutCounter > RCC_RDY_FLAGS_TIMEOUT)
+	if(Local_u16TimeOutCounter >= RCC_RDY_FLAGS_TIMEOUT)
 	{
 		Local_eErrorState = RCC_Timeout;
 	}
