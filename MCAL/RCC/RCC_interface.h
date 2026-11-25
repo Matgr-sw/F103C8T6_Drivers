@@ -4,7 +4,7 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           16-11-2026
- * Last Update:     4:40 PM, Wednesday, November 25, 2026
+ * Last Update:     4:55 PM, Wednesday, November 25, 2026
  ****************************************************************************************************/
 #ifndef RCC_INTERFACE_H
 #define RCC_INTERFACE_H
@@ -101,13 +101,21 @@ typedef enum
 
 typedef enum
 {
-	RCC_PllSrc_MUL_4 = 2,
+	RCC_PllSrc_MUL_2 = 0,
+	RCC_PllSrc_MUL_3,
+	RCC_PllSrc_MUL_4,
 	RCC_PllSrc_MUL_5,
 	RCC_PllSrc_MUL_6,
 	RCC_PllSrc_MUL_7,
 	RCC_PllSrc_MUL_8,
 	RCC_PllSrc_MUL_9,
-	RCC_PllSrc_MUL_6_5 = 13,		/*x6.5*/
+	RCC_PllSrc_MUL_10,
+	RCC_PllSrc_MUL_11,
+	RCC_PllSrc_MUL_12,
+	RCC_PllSrc_MUL_13,
+	RCC_PllSrc_MUL_14,
+	RCC_PllSrc_MUL_15,
+	RCC_PllSrc_MUL_16,
 
 }RCC_PllMul_t;
 
