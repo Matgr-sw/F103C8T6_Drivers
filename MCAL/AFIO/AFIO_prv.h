@@ -4,17 +4,37 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           24-11-2026
- * Last Update:     10:03 PM, Wednesday, November 25, 2026
+ * Last Update:     5:30 PM, Wednesday, November 25, 2026
  ****************************************************************************************************/
 #ifndef AFIO_PRV_H
 #define AFIO_PRV_H
 
 
 								/*********************** prv MACROS  ***********************/
+/*cfg tokens: #if labels only, never written to a reg*/
 #define 	AFIO_DEFAULT		       1u
 #define		AFIO_REMAPPED		       2u
 #define     AFIO_PARTIAL_REMAP	       3u
 #define     AFIO_FULL_REMAP   	       4u
+
+								/*********************** 2-bit remap field values, RM0008 9.4.2  ***********************/
+#define     AFIO_USART3_PARTIAL_VAL    0b01u
+#define     AFIO_USART3_FULL_VAL       0b11u
+
+#define     AFIO_TIM1_PARTIAL_VAL      0b01u
+#define     AFIO_TIM1_FULL_VAL         0b11u
+
+/*partial 1: CH1/ETR to PA15, CH2 to PB3*/
+#define     AFIO_TIM2_PARTIAL_VAL      0b01u
+#define     AFIO_TIM2_FULL_VAL         0b11u
+
+#define     AFIO_TIM3_PARTIAL_VAL      0b10u
+#define     AFIO_TIM3_FULL_VAL         0b11u
+
+/*RX to PB8, TX to PB9*/
+#define     AFIO_CAN_PARTIAL_VAL       0b10u
+/*RX to PD0, TX to PD1*/
+#define     AFIO_CAN_FULL_VAL          0b11u
 
 #define 	AFIO_EXTI_REGS_SHIFTING	   4u
 
