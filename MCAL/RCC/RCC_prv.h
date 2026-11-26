@@ -30,7 +30,7 @@
 
 #define CFGR_SW_MASK		0b11
 #define CFGR_SWS_MASK		0b11
-#define CFGR_HPRE_MASK		0b111
+#define CFGR_HPRE_MASK		0b1111
 #define CFGR_PPRE1_MASK		0b111
 #define CFGR_PPRE2_MASK		0b111
 #define CFGR_ADC_PRE_MASK	0b11
