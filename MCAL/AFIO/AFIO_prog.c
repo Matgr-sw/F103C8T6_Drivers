@@ -4,7 +4,7 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           24-11-2026
- * Last Update:     5:30 PM, Wednesday, November 25, 2026
+ * Last Update:     10:00 AM, Thursday, November 26, 2026
  ****************************************************************************************************/
 #include <stdint.h>
 #include <stddef.h>
@@ -15,6 +15,11 @@
 #include "AFIO_prv.h"
 #include "AFIO_cfg.h"
 #include "AFIO_interface.h"
+
+
+							/*********************** prv vars  ***********************/
+/*SWJ_CFG is write-only (reads undefined): last mode set, reset = full SWJ*/
+static AFIO_SWJ_t AFIO_eSWJModeShadow = AFIO_Full_SWJ;
 
 
 
@@ -33,86 +38,93 @@
 */
 void AFIO_vInit(void)
 {
+	/*work on a copy of MAPR, written once at the end*/
+	uint32_t Local_u32Mapr = AFIO->MAPR;
+
+	/*put back the last SWJ mode, not the undefined read*/
+	CLR_BITS((Local_u32Mapr), MAPR_SWJ_CFG0, AFIO_3BIT_MASK);
+	SET_BITS((Local_u32Mapr), MAPR_SWJ_CFG0, AFIO_eSWJModeShadow);
+
 	#if(SPI1_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_SPI1_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_SPI1_REMAP);
 	#elif(SPI1_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_SPI1_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_SPI1_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 	#if(I2C1_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_I2C1_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_I2C1_REMAP);
 	#elif(I2C1_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_I2C1_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_I2C1_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 	#if(USART1_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_USART1_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_USART1_REMAP);
 	#elif(USART1_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_USART1_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_USART1_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 	#if(USART2_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_USART2_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_USART2_REMAP);
 	#elif(USART2_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_USART2_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_USART2_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(USART3_REMAPPING == AFIO_DEFAULT)
-		CLR_BITS((AFIO->MAPR), MAPR_USART3_REMAP0, AFIO_2BIT_MASK);
+		CLR_BITS((Local_u32Mapr), MAPR_USART3_REMAP0, AFIO_2BIT_MASK);
 	#elif(USART3_REMAPPING == AFIO_PARTIAL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_USART3_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_USART3_REMAP0, AFIO_USART3_PARTIAL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_USART3_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_USART3_REMAP0, AFIO_USART3_PARTIAL_VAL);
 	#elif(USART3_REMAPPING == AFIO_FULL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_USART3_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_USART3_REMAP0, AFIO_USART3_FULL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_USART3_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_USART3_REMAP0, AFIO_USART3_FULL_VAL);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(TIM1_REMAPPING == AFIO_DEFAULT)
-		CLR_BITS((AFIO->MAPR), MAPR_TIM1_REMAP0, AFIO_2BIT_MASK);
+		CLR_BITS((Local_u32Mapr), MAPR_TIM1_REMAP0, AFIO_2BIT_MASK);
 	#elif(TIM1_REMAPPING == AFIO_PARTIAL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_TIM1_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_TIM1_REMAP0, AFIO_TIM1_PARTIAL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_TIM1_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_TIM1_REMAP0, AFIO_TIM1_PARTIAL_VAL);
 	#elif(TIM1_REMAPPING == AFIO_FULL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_TIM1_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_TIM1_REMAP0, AFIO_TIM1_FULL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_TIM1_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_TIM1_REMAP0, AFIO_TIM1_FULL_VAL);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(TIM2_REMAPPING == AFIO_DEFAULT)
-		CLR_BITS((AFIO->MAPR), MAPR_TIM2_REMAP0, AFIO_2BIT_MASK);
+		CLR_BITS((Local_u32Mapr), MAPR_TIM2_REMAP0, AFIO_2BIT_MASK);
 	#elif(TIM2_REMAPPING == AFIO_PARTIAL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_TIM2_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_TIM2_REMAP0, AFIO_TIM2_PARTIAL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_TIM2_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_TIM2_REMAP0, AFIO_TIM2_PARTIAL_VAL);
 	#elif(TIM2_REMAPPING == AFIO_FULL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_TIM2_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_TIM2_REMAP0, AFIO_TIM2_FULL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_TIM2_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_TIM2_REMAP0, AFIO_TIM2_FULL_VAL);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(TIM3_REMAPPING == AFIO_DEFAULT)
-		CLR_BITS((AFIO->MAPR), MAPR_TIM3_REMAP0, AFIO_2BIT_MASK);
+		CLR_BITS((Local_u32Mapr), MAPR_TIM3_REMAP0, AFIO_2BIT_MASK);
 	#elif(TIM3_REMAPPING == AFIO_PARTIAL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_TIM3_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_TIM3_REMAP0, AFIO_TIM3_PARTIAL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_TIM3_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_TIM3_REMAP0, AFIO_TIM3_PARTIAL_VAL);
 	#elif(TIM3_REMAPPING == AFIO_FULL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_TIM3_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_TIM3_REMAP0, AFIO_TIM3_FULL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_TIM3_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_TIM3_REMAP0, AFIO_TIM3_FULL_VAL);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
@@ -120,81 +132,81 @@ void AFIO_vInit(void)
 
 
 	#if(TIM4_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_TIM4_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_TIM4_REMAP);
 	#elif(TIM4_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_TIM4_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_TIM4_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(CAN_REMAPPING == AFIO_DEFAULT)
-		CLR_BITS((AFIO->MAPR), MAPR_CAN_REMAP0, AFIO_2BIT_MASK);
+		CLR_BITS((Local_u32Mapr), MAPR_CAN_REMAP0, AFIO_2BIT_MASK);
 	#elif(CAN_REMAPPING == AFIO_PARTIAL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_CAN_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_CAN_REMAP0, AFIO_CAN_PARTIAL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_CAN_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_CAN_REMAP0, AFIO_CAN_PARTIAL_VAL);
 	#elif(CAN_REMAPPING == AFIO_FULL_REMAP)
-		CLR_BITS((AFIO->MAPR), MAPR_CAN_REMAP0, AFIO_2BIT_MASK);
-		SET_BITS((AFIO->MAPR), MAPR_CAN_REMAP0, AFIO_CAN_FULL_VAL);
+		CLR_BITS((Local_u32Mapr), MAPR_CAN_REMAP0, AFIO_2BIT_MASK);
+		SET_BITS((Local_u32Mapr), MAPR_CAN_REMAP0, AFIO_CAN_FULL_VAL);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(PD01_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_PD01_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_PD01_REMAP);
 	#elif(PD01_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_PD01_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_PD01_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(TIM5CH4_IR_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_TIM5CH4_IR_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_TIM5CH4_IR_REMAP);
 	#elif(TIM5CH4_IR_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_TIM5CH4_IR_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_TIM5CH4_IR_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(ADC1_ETRGINJ_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_ADC1_ETRGINJ_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_ADC1_ETRGINJ_REMAP);
 	#elif(ADC1_ETRGINJ_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_ADC1_ETRGINJ_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_ADC1_ETRGINJ_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(ADC1_ETRGREG_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_ADC1_ETRGREG_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_ADC1_ETRGREG_REMAP);
 	#elif(ADC1_ETRGREG_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_ADC1_ETRGREG_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_ADC1_ETRGREG_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(ADC2_ETRGINJ_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_ADC2_ETRGINJ_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_ADC2_ETRGINJ_REMAP);
 	#elif(ADC2_ETRGINJ_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_ADC2_ETRGINJ_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_ADC2_ETRGINJ_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
 
 	#if(ADC2_ETRGREG_REMAPPING == AFIO_REMAPPED)
-		SET_BIT((AFIO->MAPR), MAPR_ADC2_ETRGREG_REMAP);
+		SET_BIT((Local_u32Mapr), MAPR_ADC2_ETRGREG_REMAP);
 	#elif(ADC2_ETRGREG_REMAPPING == AFIO_DEFAULT)
-		CLR_BIT((AFIO->MAPR), MAPR_ADC2_ETRGREG_REMAP);
+		CLR_BIT((Local_u32Mapr), MAPR_ADC2_ETRGREG_REMAP);
 	#else
 		#error "Invalid AFIO MAP config"
 	#endif
 
-
+	AFIO->MAPR = Local_u32Mapr;
 
 }
 
@@ -207,14 +219,20 @@ void AFIO_vInit(void)
 * 	Returns:                    - void
 * 	Preconditions:              - The RCC driver is initialized and working
 * 								- The clk is enabled of the AFIO peripheral
-* 	Side effects:               No side effects
+* 	Side effects:               The mode is kept and put back on every AFIO_vInit
 * 	Post Conditions:            SWJ mode is configed
 * 	Sync/Async:               	Sync.
 */
 void AFIO_vSetSWJMode(AFIO_SWJ_t Copy_eSWJmode)
 {
-	CLR_BITS((AFIO->MAPR), MAPR_SWJ_CFG0, AFIO_3BIT_MASK);
-	SET_BITS((AFIO->MAPR), MAPR_SWJ_CFG0, Copy_eSWJmode);
+	uint32_t Local_u32Mapr = AFIO->MAPR;
+
+	AFIO_eSWJModeShadow = Copy_eSWJmode;
+
+	CLR_BITS((Local_u32Mapr), MAPR_SWJ_CFG0, AFIO_3BIT_MASK);
+	SET_BITS((Local_u32Mapr), MAPR_SWJ_CFG0, AFIO_eSWJModeShadow);
+	/*one write: no 000 (full JTAG) step in between*/
+	AFIO->MAPR = Local_u32Mapr;
 }
 
 

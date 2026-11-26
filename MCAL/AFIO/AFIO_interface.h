@@ -4,7 +4,7 @@
  * @author:         Ibrahim Saber
  * @version:        1.0
  * @date:           24-11-2026
- * Last Update:     10:03 PM, Wednesday, November 25, 2026
+ * Last Update:     10:00 AM, Thursday, November 26, 2026
  ****************************************************************************************************/
 #ifndef AFIO_INTERFACE_H
 #define AFIO_INTERFACE_H
@@ -65,7 +65,7 @@ typedef enum
 	AFIO_Full_SWJ,
 	AFIO_Full_SWJ_No_NJTRST,
 	AFIO_JTAG_Disabled_SWDP_Enabled,
-	AFIO_JTAG_Disabled_SWDP_Disabled,
+	AFIO_JTAG_Disabled_SWDP_Disabled = 4,
 }AFIO_SWJ_t;
 
 
